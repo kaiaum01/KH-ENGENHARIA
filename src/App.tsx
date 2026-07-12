@@ -54,7 +54,7 @@ export default function App() {
       </nav>
 
       <section className="hero">
-        <img src="https://i.ibb.co/32Q6BVL/KH-Engenharia01.png" alt="KH Engenharia" className="hero-image" />
+        <img src="https://i.ibb.co/Pstjf86c/Sem-t-tulo.png" alt="KH Engenharia" className="hero-image" referrerPolicy="no-referrer" />
         <h1>Formação sólida, <em>dedicação total</em> ao seu projeto</h1>
         <p>Engenheiro Civil, com base técnica atualizada e comprometimento real com cada cliente. Atendimento próximo, preço justo e responsabilidade do início ao fim.</p>
         <div className="hero-btns">
