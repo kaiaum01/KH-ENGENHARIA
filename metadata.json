@@ -1,0 +1,8 @@
+{
+  "name": "KH Engenharia",
+  "description": "Regularização de imóveis, projetos arquitetônicos e estruturais. CREA-PR PR-232385/D. Umuarama PR.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
