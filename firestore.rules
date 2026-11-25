@@ -1,0 +1,681 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // HARDENED GLOBAL PRIMITIVES
+    // =========================================================================
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn()
+        && request.auth.token.email is string
+        && request.auth.token.email.size() >= 5
+        && request.auth.token.email.size() <= 254
+        && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'kaiolegal0@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin()
+        || (isVerifiedUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isValidEmail(val) {
+      return val is string
+        && val.size() >= 5
+        && val.size() <= 254
+        && val.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$');
+    }
+
+    function isValidServiceType(val) {
+      return val is string && val in ['regularizacao', 'arquitetonico', 'laudo_vistoria', 'complementares', 'acompanhamento'];
+    }
+
+    function isValidProjectStatus(val) {
+      return val is string && val in ['em_analise', 'em_andamento', 'aguardando_cliente', 'aguardando_prefeitura', 'concluido'];
+    }
+
+    function isValidMilestoneStatus(val) {
+      return val is string && val in ['pendente', 'em_andamento', 'concluido'];
+    }
+
+    function isValidDocumentCategory(val) {
+      return val is string && val in ['planta', 'art', 'memorial', 'laudo', 'prefeitura', 'documento_cliente'];
+    }
+
+    function isValidDocumentStatus(val) {
+      return val is string && val in ['disponivel', 'pendente_cliente', 'enviado_cliente', 'aprovado'];
+    }
+
+    function isValidFileUrl(val) {
+      return val is string
+        && val.size() <= 1000
+        && (val == '' || val.matches('^https://.*') || val.matches('^/projetos/.*'));
+    }
+
+    function isProjectClientData(data) {
+      return isVerifiedUser() && (
+        (data.clientUid is string && data.clientUid.size() > 0 && data.clientUid == request.auth.uid)
+        || (data.clientEmail is string && data.clientEmail == request.auth.token.email)
+      );
+    }
+
+    function isClientRecordOwner(data) {
+      return isVerifiedUser() && (
+        (data.uid is string && data.uid.size() > 0 && data.uid == request.auth.uid)
+        || (data.email is string && data.email == request.auth.token.email)
+      );
+    }
+
+    // =========================================================================
+    // VALIDATION BLUEPRINTS (Anti-Update-Gap)
+    // =========================================================================
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'phone', 'city', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'phone', 'city', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && isValidEmail(data.email)
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && data.phone is string && data.phone.size() <= 30
+        && data.city is string && data.city.size() <= 100
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidClientAccount(data) {
+      return data.keys().hasAll([
+          'uid', 'email', 'displayName', 'phone', 'city', 'notes',
+          'authMethod', 'status', 'approvedBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'phone', 'city', 'notes',
+          'authMethod', 'status', 'approvedBy', 'createdAt', 'updatedAt'
+        ])
+        && data.uid is string && data.uid.size() <= 128 && (data.uid == '' || isValidId(data.uid))
+        && isValidEmail(data.email)
+        && data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 120
+        && data.phone is string && data.phone.size() <= 30
+        && data.city is string && data.city.size() <= 100
+        && data.notes is string && data.notes.size() <= 500
+        && data.authMethod is string && data.authMethod in ['email_senha', 'google']
+        && data.status is string && data.status in ['aprovado', 'suspenso']
+        && isValidId(data.approvedBy)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAccessRequest(data) {
+      return data.keys().hasAll([
+          'applicantUid', 'email', 'displayName', 'phone', 'city',
+          'serviceInterest', 'message', 'status', 'adminNotes', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'applicantUid', 'email', 'displayName', 'phone', 'city',
+          'serviceInterest', 'message', 'status', 'adminNotes', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.applicantUid)
+        && isValidEmail(data.email)
+        && data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 120
+        && data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 30
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 100
+        && isValidServiceType(data.serviceInterest)
+        && data.message is string && data.message.size() <= 1000
+        && data.status is string && data.status in ['pendente', 'aprovada', 'recusada']
+        && data.adminNotes is string && data.adminNotes.size() <= 500
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidServiceRequest(data) {
+      return data.keys().hasAll([
+          'clientUid', 'clientEmail', 'clientName', 'phone', 'city',
+          'serviceType', 'propertyAddress', 'description', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'clientUid', 'clientEmail', 'clientName', 'phone', 'city',
+          'serviceType', 'propertyAddress', 'description', 'status', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.clientUid)
+        && isValidEmail(data.clientEmail)
+        && data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 120
+        && data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 30
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 100
+        && isValidServiceType(data.serviceType)
+        && data.propertyAddress is string && data.propertyAddress.size() >= 3 && data.propertyAddress.size() <= 240
+        && data.description is string && data.description.size() >= 5 && data.description.size() <= 2000
+        && data.status is string && data.status in ['recebida', 'em_analise', 'convertida', 'arquivada']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll([
+          'code', 'title', 'serviceType', 'status', 'progress',
+          'clientEmail', 'clientUid', 'clientName', 'clientPhone',
+          'propertyAddress', 'city', 'areaSqm', 'artNumber', 'protocolNumber',
+          'summary', 'nextStep', 'estimatedDelivery', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'code', 'title', 'serviceType', 'status', 'progress',
+          'clientEmail', 'clientUid', 'clientName', 'clientPhone',
+          'propertyAddress', 'city', 'areaSqm', 'artNumber', 'protocolNumber',
+          'summary', 'nextStep', 'estimatedDelivery', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.code is string && data.code.size() >= 3 && data.code.size() <= 32 && data.code.matches('^[A-Z0-9\\-]+$')
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 160
+        && isValidServiceType(data.serviceType)
+        && isValidProjectStatus(data.status)
+        && data.progress is number && data.progress >= 0 && data.progress <= 100
+        && isValidEmail(data.clientEmail)
+        && data.clientUid is string && data.clientUid.size() <= 128 && (data.clientUid == '' || isValidId(data.clientUid))
+        && data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 120
+        && data.clientPhone is string && data.clientPhone.size() <= 30
+        && data.propertyAddress is string && data.propertyAddress.size() >= 3 && data.propertyAddress.size() <= 240
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 100
+        && data.areaSqm is number && data.areaSqm >= 0 && data.areaSqm <= 1000000
+        && data.artNumber is string && data.artNumber.size() <= 60
+        && data.protocolNumber is string && data.protocolNumber.size() <= 60
+        && data.summary is string && data.summary.size() <= 1500
+        && data.nextStep is string && data.nextStep.size() <= 300
+        && data.estimatedDelivery is string && data.estimatedDelivery.size() <= 40
+        && isValidId(data.createdBy)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMilestone(data) {
+      return data.keys().hasAll([
+          'projectId', 'clientEmail', 'title', 'description',
+          'order', 'status', 'dueDate', 'completedDate', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'projectId', 'clientEmail', 'title', 'description',
+          'order', 'status', 'dueDate', 'completedDate', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.projectId)
+        && isValidEmail(data.clientEmail)
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 160
+        && data.description is string && data.description.size() <= 600
+        && data.order is number && data.order >= 0 && data.order <= 100
+        && isValidMilestoneStatus(data.status)
+        && data.dueDate is string && data.dueDate.size() <= 40
+        && data.completedDate is string && data.completedDate.size() <= 40
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidDocument(data) {
+      return data.keys().hasAll([
+          'projectId', 'clientEmail', 'title', 'category', 'revision',
+          'status', 'fileUrl', 'notes', 'uploadedByRole', 'uploadedByUid',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'projectId', 'clientEmail', 'title', 'category', 'revision',
+          'status', 'fileUrl', 'notes', 'uploadedByRole', 'uploadedByUid',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.projectId)
+        && isValidEmail(data.clientEmail)
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 160
+        && isValidDocumentCategory(data.category)
+        && data.revision is string && data.revision.size() <= 32
+        && isValidDocumentStatus(data.status)
+        && isValidFileUrl(data.fileUrl)
+        && data.notes is string && data.notes.size() <= 600
+        && data.uploadedByRole is string && data.uploadedByRole in ['engenheiro', 'cliente']
+        && isValidId(data.uploadedByUid)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll([
+          'projectId', 'clientEmail', 'authorUid', 'authorName', 'authorRole', 'body', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'projectId', 'clientEmail', 'authorUid', 'authorName', 'authorRole', 'body', 'createdAt'
+        ])
+        && isValidId(data.projectId)
+        && isValidEmail(data.clientEmail)
+        && isValidId(data.authorUid)
+        && data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 120
+        && data.authorRole is string && data.authorRole in ['engenheiro', 'cliente']
+        && data.body is string && data.body.size() >= 1 && data.body.size() <= 2000
+        && data.createdAt is timestamp;
+    }
+
+    // =========================================================================
+    // COLLECTION: /admins/{userId}
+    // =========================================================================
+
+    match /admins/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    // =========================================================================
+    // COLLECTION: /users/{userId} (PII Isolated to Owner & Admin)
+    // =========================================================================
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && ((isVerifiedUser() && existing().uid == request.auth.uid) || isBootstrappedAdmin());
+
+      allow create: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && isOwner(userId)
+        && incoming().uid == request.auth.uid
+        && incoming().email == request.auth.token.email
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().email == existing().email
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'phone', 'city', 'updatedAt']))
+          || (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'phone', 'city', 'updatedAt']))
+        );
+
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // COLLECTION: /clients/{clientId} (Admin-Approved Client Directory)
+    // =========================================================================
+
+    match /clients/{clientId} {
+      allow get: if isSignedIn() && isValidId(clientId) && (
+        isClientRecordOwner(existing()) || isAdmin()
+      );
+
+      allow list: if isSignedIn() && (
+        isClientRecordOwner(existing()) || isBootstrappedAdmin()
+      );
+
+      allow create: if isSignedIn()
+        && isValidId(clientId)
+        && isValidClientAccount(incoming())
+        && isAdmin()
+        && incoming().approvedBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(clientId)
+        && isValidClientAccount(incoming())
+        && incoming().approvedBy == existing().approvedBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Admin updates client profile, status, or auth method
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'uid', 'email', 'displayName', 'phone', 'city', 'notes', 'authMethod', 'status', 'updatedAt'
+          ]))
+          // Action: Approved client links their UID once if initially empty
+          || (
+            isVerifiedUser()
+            && existing().status == 'aprovado'
+            && existing().email == request.auth.token.email
+            && existing().uid == ''
+            && incoming().uid == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly(['uid', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(clientId) && isAdmin();
+    }
+
+    // =========================================================================
+    // COLLECTION: /accessRequests/{requestId} (Client Approval Queue)
+    // =========================================================================
+
+    match /accessRequests/{requestId} {
+      allow get: if isSignedIn() && isValidId(requestId) && (
+        (isVerifiedUser() && existing().applicantUid == request.auth.uid)
+        || isAdmin()
+      );
+
+      allow list: if isSignedIn() && (
+        (isVerifiedUser() && existing().applicantUid == request.auth.uid)
+        || isBootstrappedAdmin()
+      );
+
+      allow create: if isSignedIn()
+        && isValidId(requestId)
+        && isValidAccessRequest(incoming())
+        && isVerifiedUser()
+        && incoming().applicantUid == request.auth.uid
+        && incoming().email == request.auth.token.email
+        && incoming().status == 'pendente'
+        && incoming().adminNotes == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(requestId)
+        && isValidAccessRequest(incoming())
+        && incoming().applicantUid == existing().applicantUid
+        && incoming().email == existing().email
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Admin approves or declines an access request
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNotes', 'updatedAt']))
+          // Action: Applicant edits pending request details
+          || (
+            isVerifiedUser()
+            && existing().applicantUid == request.auth.uid
+            && existing().status == 'pendente'
+            && incoming().status == 'pendente'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'phone', 'city', 'serviceInterest', 'message', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(requestId) && isAdmin();
+    }
+
+    // =========================================================================
+    // COLLECTION: /serviceRequests/{requestId}
+    // =========================================================================
+
+    match /serviceRequests/{requestId} {
+      allow get: if isSignedIn() && isValidId(requestId) && (
+        (isVerifiedUser() && (existing().clientUid == request.auth.uid || existing().clientEmail == request.auth.token.email))
+        || isAdmin()
+      );
+
+      allow list: if isSignedIn() && (
+        (isVerifiedUser() && existing().clientUid == request.auth.uid)
+        || isBootstrappedAdmin()
+      );
+
+      allow create: if isSignedIn()
+        && isValidId(requestId)
+        && isValidServiceRequest(incoming())
+        && isVerifiedUser()
+        && incoming().clientUid == request.auth.uid
+        && incoming().clientEmail == request.auth.token.email
+        && incoming().status == 'recebida'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(requestId)
+        && isValidServiceRequest(incoming())
+        && incoming().clientUid == existing().clientUid
+        && incoming().clientEmail == existing().clientEmail
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Admin updates request status
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+          // Action: Client edits request details while still pending (non-terminal)
+          || (
+            isVerifiedUser()
+            && existing().clientUid == request.auth.uid
+            && existing().status == 'recebida'
+            && incoming().status == 'recebida'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['phone', 'city', 'propertyAddress', 'description', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(requestId) && isAdmin();
+    }
+
+    // =========================================================================
+    // COLLECTION: /projects/{projectId}
+    // =========================================================================
+
+    match /projects/{projectId} {
+      allow get: if isSignedIn() && isValidId(projectId) && (
+        isProjectClientData(existing()) || isAdmin()
+      );
+
+      allow list: if isSignedIn() && (
+        isProjectClientData(existing()) || isBootstrappedAdmin()
+      );
+
+      allow create: if isSignedIn()
+        && isValidId(projectId)
+        && isValidProject(incoming())
+        && isAdmin()
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(projectId)
+        && isValidProject(incoming())
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Admin manages project lifecycle and details
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'code', 'title', 'serviceType', 'status', 'progress',
+            'clientEmail', 'clientUid', 'clientName', 'clientPhone',
+            'propertyAddress', 'city', 'areaSqm', 'artNumber', 'protocolNumber',
+            'summary', 'nextStep', 'estimatedDelivery', 'updatedAt'
+          ]))
+          // Action: Client binds their UID once on first view if unassigned (non-terminal)
+          || (
+            isVerifiedUser()
+            && existing().status != 'concluido'
+            && existing().clientEmail == request.auth.token.email
+            && existing().clientUid == ''
+            && incoming().clientUid == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly(['clientUid', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(projectId) && isAdmin();
+
+      // -----------------------------------------------------------------------
+      // SUBCOLLECTION: /projects/{projectId}/milestones/{milestoneId}
+      // -----------------------------------------------------------------------
+      match /milestones/{milestoneId} {
+        function parentProjectExists() {
+          return exists(/databases/$(database)/documents/projects/$(projectId));
+        }
+        function parentProject() {
+          return get(/databases/$(database)/documents/projects/$(projectId));
+        }
+
+        allow get: if isSignedIn()
+          && isValidId(projectId)
+          && isValidId(milestoneId)
+          && (
+            isAdmin()
+            || (parentProjectExists() && isProjectClientData(parentProject().data))
+          );
+
+        allow list: if isSignedIn() && (
+          (isVerifiedUser() && existing().clientEmail == request.auth.token.email)
+          || isBootstrappedAdmin()
+        );
+
+        allow create: if isSignedIn()
+          && isValidId(projectId)
+          && isValidId(milestoneId)
+          && isValidMilestone(incoming())
+          && isAdmin()
+          && parentProjectExists()
+          && incoming().projectId == projectId
+          && incoming().clientEmail == parentProject().data.clientEmail
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+
+        allow update: if isSignedIn()
+          && isValidId(projectId)
+          && isValidId(milestoneId)
+          && isValidMilestone(incoming())
+          && isAdmin()
+          && parentProjectExists()
+          && incoming().projectId == existing().projectId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'clientEmail', 'title', 'description', 'order', 'status', 'dueDate', 'completedDate', 'updatedAt'
+          ]);
+
+        allow delete: if isSignedIn() && isValidId(projectId) && isValidId(milestoneId) && isAdmin();
+      }
+
+      // -----------------------------------------------------------------------
+      // SUBCOLLECTION: /projects/{projectId}/documents/{documentId}
+      // -----------------------------------------------------------------------
+      match /documents/{documentId} {
+        function parentProjectExists() {
+          return exists(/databases/$(database)/documents/projects/$(projectId));
+        }
+        function parentProject() {
+          return get(/databases/$(database)/documents/projects/$(projectId));
+        }
+
+        allow get: if isSignedIn()
+          && isValidId(projectId)
+          && isValidId(documentId)
+          && (
+            isAdmin()
+            || (parentProjectExists() && isProjectClientData(parentProject().data))
+          );
+
+        allow list: if isSignedIn() && (
+          (isVerifiedUser() && existing().clientEmail == request.auth.token.email)
+          || isBootstrappedAdmin()
+        );
+
+        allow create: if isSignedIn()
+          && isValidId(projectId)
+          && isValidId(documentId)
+          && isValidDocument(incoming())
+          && parentProjectExists()
+          && incoming().projectId == projectId
+          && incoming().clientEmail == parentProject().data.clientEmail
+          && incoming().uploadedByUid == request.auth.uid
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && (
+            (isAdmin() && incoming().uploadedByRole == 'engenheiro')
+            || (
+              isProjectClientData(parentProject().data)
+              && parentProject().data.status != 'concluido'
+              && incoming().uploadedByRole == 'cliente'
+              && incoming().category == 'documento_cliente'
+              && incoming().status == 'enviado_cliente'
+            )
+          );
+
+        allow update: if isSignedIn()
+          && isValidId(projectId)
+          && isValidId(documentId)
+          && isValidDocument(incoming())
+          && parentProjectExists()
+          && incoming().projectId == existing().projectId
+          && incoming().uploadedByUid == existing().uploadedByUid
+          && incoming().uploadedByRole == existing().uploadedByRole
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            // Action: Admin updates any document metadata/status/url
+            (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+              'clientEmail', 'title', 'category', 'revision', 'status', 'fileUrl', 'notes', 'updatedAt'
+            ]))
+            // Action: Client fulfills a requested document while project is active
+            || (
+              isProjectClientData(parentProject().data)
+              && parentProject().data.status != 'concluido'
+              && existing().status == 'pendente_cliente'
+              && incoming().status == 'enviado_cliente'
+              && incoming().diff(existing()).affectedKeys().hasOnly(['fileUrl', 'notes', 'status', 'updatedAt'])
+            )
+          );
+
+        allow delete: if isSignedIn() && isValidId(projectId) && isValidId(documentId) && isAdmin();
+      }
+
+      // -----------------------------------------------------------------------
+      // SUBCOLLECTION: /projects/{projectId}/messages/{messageId}
+      // -----------------------------------------------------------------------
+      match /messages/{messageId} {
+        function parentProjectExists() {
+          return exists(/databases/$(database)/documents/projects/$(projectId));
+        }
+        function parentProject() {
+          return get(/databases/$(database)/documents/projects/$(projectId));
+        }
+
+        allow get: if isSignedIn()
+          && isValidId(projectId)
+          && isValidId(messageId)
+          && (
+            isAdmin()
+            || (parentProjectExists() && isProjectClientData(parentProject().data))
+          );
+
+        allow list: if isSignedIn() && (
+          (isVerifiedUser() && existing().clientEmail == request.auth.token.email)
+          || isBootstrappedAdmin()
+        );
+
+        allow create: if isSignedIn()
+          && isValidId(projectId)
+          && isValidId(messageId)
+          && isValidMessage(incoming())
+          && parentProjectExists()
+          && incoming().projectId == projectId
+          && incoming().clientEmail == parentProject().data.clientEmail
+          && incoming().authorUid == request.auth.uid
+          && incoming().createdAt == request.time
+          && (
+            (isAdmin() && incoming().authorRole == 'engenheiro')
+            || (
+              isProjectClientData(parentProject().data)
+              && incoming().authorRole == 'cliente'
+            )
+          );
+
+        allow update: if false;
+        allow delete: if isSignedIn() && isValidId(projectId) && isValidId(messageId) && isAdmin();
+      }
+    }
+  }
+}

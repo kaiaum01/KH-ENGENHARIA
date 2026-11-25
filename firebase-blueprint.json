@@ -1,0 +1,637 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private client or engineer profile stored under /users/{userId}. Strictly isolated PII.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID matching document ID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254,
+          "description": "Verified account email address (lowercase)."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Full name of the user."
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "WhatsApp or phone contact number."
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Municipality / city in Parana or region."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of profile creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last profile update."
+        }
+      },
+      "required": ["uid", "email", "displayName", "phone", "city", "createdAt", "updatedAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Explicit administrator registry document stored at /admins/{userId}.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "ClientAccount": {
+      "title": "ClientAccount",
+      "description": "Admin-approved client account record granting access to the KH Engenharia Client Area.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Firebase Auth UID if already created or linked."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "authMethod": {
+          "type": "string",
+          "enum": ["email_senha", "google"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["aprovado", "suspenso"]
+        },
+        "approvedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "displayName",
+        "phone",
+        "city",
+        "notes",
+        "authMethod",
+        "status",
+        "approvedBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AccessRequest": {
+      "title": "AccessRequest",
+      "description": "Client portal access approval request submitted by a verified user awaiting admin approval.",
+      "type": "object",
+      "properties": {
+        "applicantUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 30
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "serviceInterest": {
+          "type": "string",
+          "enum": ["regularizacao", "arquitetonico", "laudo_vistoria", "complementares", "acompanhamento"]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pendente", "aprovada", "recusada"]
+        },
+        "adminNotes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "applicantUid",
+        "email",
+        "displayName",
+        "phone",
+        "city",
+        "serviceInterest",
+        "message",
+        "status",
+        "adminNotes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ServiceRequest": {
+      "title": "ServiceRequest",
+      "description": "New project or service inquiry submitted by a signed-in client.",
+      "type": "object",
+      "properties": {
+        "clientUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "clientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 30
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "serviceType": {
+          "type": "string",
+          "enum": ["regularizacao", "arquitetonico", "laudo_vistoria", "complementares", "acompanhamento"]
+        },
+        "propertyAddress": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 2000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["recebida", "em_analise", "convertida", "arquivada"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "clientUid",
+        "clientEmail",
+        "clientName",
+        "phone",
+        "city",
+        "serviceType",
+        "propertyAddress",
+        "description",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Engineering project managed by KH Engenharia for a specific client.",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "pattern": "^[A-Z0-9\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "serviceType": {
+          "type": "string",
+          "enum": ["regularizacao", "arquitetonico", "laudo_vistoria", "complementares", "acompanhamento"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["em_analise", "em_andamento", "aguardando_cliente", "aguardando_prefeitura", "concluido"]
+        },
+        "progress": {
+          "type": "number",
+          "description": "Completion percentage from 0 to 100."
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "clientUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "clientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "clientPhone": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "propertyAddress": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "areaSqm": {
+          "type": "number",
+          "description": "Constructed or lot area in square meters."
+        },
+        "artNumber": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "protocolNumber": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 1500
+        },
+        "nextStep": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "estimatedDelivery": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "createdBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "code",
+        "title",
+        "serviceType",
+        "status",
+        "progress",
+        "clientEmail",
+        "clientUid",
+        "clientName",
+        "clientPhone",
+        "propertyAddress",
+        "city",
+        "areaSqm",
+        "artNumber",
+        "protocolNumber",
+        "summary",
+        "nextStep",
+        "estimatedDelivery",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ProjectMilestone": {
+      "title": "ProjectMilestone",
+      "description": "Ordered engineering stage / milestone belonging to a project.",
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "order": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pendente", "em_andamento", "concluido"]
+        },
+        "dueDate": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "completedDate": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "projectId",
+        "clientEmail",
+        "title",
+        "description",
+        "order",
+        "status",
+        "dueDate",
+        "completedDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ProjectDocument": {
+      "title": "ProjectDocument",
+      "description": "Technical deliverable, ART, blueprint, or client document attached to a project.",
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "category": {
+          "type": "string",
+          "enum": ["planta", "art", "memorial", "laudo", "prefeitura", "documento_cliente"]
+        },
+        "revision": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "status": {
+          "type": "string",
+          "enum": ["disponivel", "pendente_cliente", "enviado_cliente", "aprovado"]
+        },
+        "fileUrl": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "uploadedByRole": {
+          "type": "string",
+          "enum": ["engenheiro", "cliente"]
+        },
+        "uploadedByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "projectId",
+        "clientEmail",
+        "title",
+        "category",
+        "revision",
+        "status",
+        "fileUrl",
+        "notes",
+        "uploadedByRole",
+        "uploadedByUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ProjectMessage": {
+      "title": "ProjectMessage",
+      "description": "Project activity update or message between the engineer and client.",
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 254
+        },
+        "authorUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "authorRole": {
+          "type": "string",
+          "enum": ["engenheiro", "cliente"]
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "projectId",
+        "clientEmail",
+        "authorUid",
+        "authorName",
+        "authorRole",
+        "body",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profiles with PII restricted to the owner and KH Engenharia admin."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Trusted administrator lookup documents."
+    },
+    "/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/ClientAccount" },
+      "description": "Admin-approved client accounts controlling access to the Client Area."
+    },
+    "/accessRequests/{requestId}": {
+      "schema": { "$ref": "#/entities/AccessRequest" },
+      "description": "Pending client registration/approval requests reviewed by the administrator."
+    },
+    "/serviceRequests/{requestId}": {
+      "schema": { "$ref": "#/entities/ServiceRequest" },
+      "description": "Service requests submitted by authenticated clients."
+    },
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Engineering projects owned by KH Engenharia and assigned to clients."
+    },
+    "/projects/{projectId}/milestones/{milestoneId}": {
+      "schema": { "$ref": "#/entities/ProjectMilestone" },
+      "description": "Ordered engineering stages for a project."
+    },
+    "/projects/{projectId}/documents/{documentId}": {
+      "schema": { "$ref": "#/entities/ProjectDocument" },
+      "description": "Blueprints, ARTs, reports, and client documents for a project."
+    },
+    "/projects/{projectId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ProjectMessage" },
+      "description": "Direct project updates and communication log between engineer and client."
+    }
+  }
+}
