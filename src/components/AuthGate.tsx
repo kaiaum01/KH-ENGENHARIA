@@ -12,29 +12,15 @@ import {
   EyeOff,
   FileCheck2,
   FolderKanban,
-  KeyRound,
   Lock,
   MessageSquare,
   ShieldCheck,
-  Users,
 } from 'lucide-react';
-import {
-  ADMIN_EMAIL,
-  auth,
-  FIREBASE_PROJECT_ID,
-  googleProvider,
-} from '../lib/firebase';
+import { auth, FIREBASE_PROJECT_ID, googleProvider } from '../lib/firebase';
 import { mapFirebaseAuthErrorPtBr } from '../lib/validation';
 
-export type LoginPortalMode = 'client' | 'admin';
-
-interface AuthGateProps {
-  initialMode: LoginPortalMode;
-}
-
-export function AuthGate({ initialMode }: AuthGateProps) {
-  const [mode, setMode] = useState<LoginPortalMode>(initialMode);
-  const [email, setEmail] = useState(initialMode === 'admin' ? ADMIN_EMAIL : '');
+export function AuthGate() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -45,15 +31,6 @@ export function AuthGate({ initialMode }: AuthGateProps) {
   const [needsEmailProviderSetup, setNeedsEmailProviderSetup] = useState(false);
 
   const firebaseProvidersUrl = `https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/authentication/providers`;
-
-  const switchMode = (nextMode: LoginPortalMode) => {
-    setMode(nextMode);
-    setAuthError(null);
-    setResetSent(false);
-    setNeedsEmailProviderSetup(false);
-    setPassword('');
-    setEmail(nextMode === 'admin' ? ADMIN_EMAIL : '');
-  };
 
   const handleEmailPasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +98,7 @@ export function AuthGate({ initialMode }: AuthGateProps) {
 
   return (
     <div className="min-h-screen bg-[#0b0c0c] text-[#f0f1ed] grid lg:grid-cols-12">
-      {/* Left Column: Authentication Form */}
+      {/* Left Column: Unified Portal Authentication */}
       <div className="lg:col-span-6 xl:col-span-5 flex flex-col justify-between px-6 py-8 sm:px-12 lg:px-14 border-b lg:border-b-0 lg:border-r border-[#242a25]">
         {/* Brand Row */}
         <div className="flex items-center justify-between gap-4">
@@ -155,52 +132,21 @@ export function AuthGate({ initialMode }: AuthGateProps) {
           </a>
         </div>
 
-        {/* Mode Switcher & Login Form */}
+        {/* Login Form */}
         <div className="py-10 lg:py-12 max-w-md w-full">
-          {/* Interactive Segmented Control: Cliente | Administrador */}
-          <div className="inline-flex items-center gap-1 p-1 bg-[#121513] border border-[#242a25] mb-7">
-            <button
-              type="button"
-              onClick={() => switchMode('client')}
-              className={`px-3.5 py-2 text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                mode === 'client'
-                  ? 'bg-[#232b25] text-[#f0f1ed]'
-                  : 'text-[#8f9991] hover:text-[#e3e7e1]'
-              }`}
-            >
-              Área do Cliente
-            </button>
-            <button
-              type="button"
-              onClick={() => switchMode('admin')}
-              className={`px-3.5 py-2 text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                mode === 'admin'
-                  ? 'bg-[#232b25] text-[#f0f1ed]'
-                  : 'text-[#8f9991] hover:text-[#e3e7e1]'
-              }`}
-            >
-              Administrador
-            </button>
-          </div>
-
           <div className="flex items-center gap-3 text-[11px] tracking-[2.2px] uppercase text-[#a8baa4] mb-4">
             <span className="w-6 h-px bg-current" aria-hidden="true" />
-            {mode === 'admin' ? 'Acesso restrito · Eng. Kaio' : 'Portal do Cliente'}
+            Área do Cliente
           </div>
 
           <h1 className="font-display text-3xl sm:text-4xl font-medium tracking-tight text-[#f0f1ed] leading-[1.12] mb-3">
-            {mode === 'admin'
-              ? 'Painel administrativo da KH Engenharia.'
-              : 'Acompanhe o seu projeto com clareza.'}
+            Acompanhe o seu projeto com clareza.
           </h1>
 
           <p className="text-sm text-[#aeb6af] leading-relaxed mb-7">
-            {mode === 'admin'
-              ? 'Entre com seu e-mail e senha de administrador para aprovar clientes, criar acessos e gerenciar todos os projetos.'
-              : 'Entre com o e-mail e senha criados após sua aprovação, ou acesse com Google para solicitar liberação de acesso.'}
+            Entre com seu e-mail e senha de acesso ou conecte sua conta Google para acompanhar projetos, documentos e solicitações.
           </p>
 
-          {/* Email & Password Form */}
           <form onSubmit={handleEmailPasswordLogin} className="space-y-4">
             <div>
               <label htmlFor="auth-email" className="block text-xs text-[#aeb6af] mb-1.5">
@@ -213,7 +159,7 @@ export function AuthGate({ initialMode }: AuthGateProps) {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={mode === 'admin' ? ADMIN_EMAIL : 'seuemail@exemplo.com'}
+                placeholder="seuemail@exemplo.com"
                 className="w-full px-3.5 py-2.5 text-sm bg-[#121513] border border-[#2c342d] text-[#f0f1ed] placeholder:text-[#6d776f] focus:border-[#8fa38c]"
               />
             </div>
@@ -260,11 +206,7 @@ export function AuthGate({ initialMode }: AuthGateProps) {
             >
               <span className="inline-flex items-center gap-2.5">
                 <Lock className="w-4 h-4 shrink-0" aria-hidden="true" />
-                {signingIn
-                  ? 'Verificando acesso...'
-                  : mode === 'admin'
-                    ? 'Entrar no Painel Admin'
-                    : 'Entrar com e-mail e senha'}
+                {signingIn ? 'Verificando acesso...' : 'Entrar no portal'}
               </span>
               <ArrowUpRight className="w-4 h-4 shrink-0" aria-hidden="true" />
             </button>
@@ -294,8 +236,8 @@ export function AuthGate({ initialMode }: AuthGateProps) {
                 Ative o provedor "E-mail/senha" no Firebase Console
               </div>
               <p className="text-[#d4c49c]">
-                Para usar login por senha (tanto para você quanto para os clientes), ative o método{' '}
-                <strong>E-mail/senha</strong> em Authentication → Sign-in method. Enquanto isso, você já pode entrar com Google abaixo e definir sua senha nas configurações do painel.
+                Para usar login por e-mail e senha, habilite o método{' '}
+                <strong>E-mail/senha</strong> em Authentication → Sign-in method. Enquanto isso, você pode entrar com Google abaixo.
               </p>
               <a
                 href={firebaseProvidersUrl}
@@ -328,40 +270,29 @@ export function AuthGate({ initialMode }: AuthGateProps) {
                 d="M21.35 11.1H12v2.98h5.35c-.23 1.48-1.74 4.35-5.35 4.35-3.22 0-5.85-2.67-5.85-5.93s2.63-5.93 5.85-5.93c1.83 0 3.06.78 3.76 1.45l2.56-2.48C16.68 4 14.54 3 12 3 7.03 3 3 7.03 3 12s4.03 9 9 9c5.19 0 8.64-3.65 8.64-8.79 0-.59-.07-1.04-.29-1.11z"
               />
             </svg>
-            {googleLoading
-              ? 'Conectando Google...'
-              : mode === 'admin'
-                ? 'Entrar com Google (primeiro acesso / definir senha)'
-                : 'Entrar com Google ou solicitar aprovação'}
+            {googleLoading ? 'Conectando Google...' : 'Continuar com Google'}
           </button>
 
-          {mode === 'admin' && (
-            <p className="mt-3 text-[11px] text-[#858f87] leading-relaxed">
-              Primeiro acesso como administrador? Entre com sua conta Google ({ADMIN_EMAIL}) e defina sua senha pessoal na aba{' '}
-              <strong className="text-[#cbd2cb] font-medium">Segurança &amp; Senha</strong> do painel.
-            </p>
-          )}
+          <p className="mt-3 text-[11px] text-[#858f87] leading-relaxed">
+            Ainda não tem acesso liberado? Entre com sua conta Google para enviar sua solicitação de cadastro ao engenheiro responsável.
+          </p>
         </div>
 
         {/* Footer Legal Note */}
         <div className="pt-6 border-t border-[#1e231f] flex flex-wrap items-center justify-between gap-3 text-[11px] text-[#7f8981]">
           <span className="inline-flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-[#95a791]" aria-hidden="true" />
-            Autenticação protegida via Firebase
+            Acesso privado e autenticado
           </span>
           <span className="font-mono">CREA-PR PR-232385/D</span>
         </div>
       </div>
 
-      {/* Right Column: Contextual Showcase */}
+      {/* Right Column: Architectural Visual Showcase */}
       <div className="lg:col-span-6 xl:col-span-7 relative min-h-[340px] lg:min-h-screen bg-[#111412] flex flex-col justify-between overflow-hidden">
         <img
-          src={mode === 'admin' ? '/projetos/instalacoes.png' : '/projetos/residencia.png'}
-          alt={
-            mode === 'admin'
-              ? 'Modelagem técnica de instalações de autoria de Kaio Henrique'
-              : 'Projeto arquitetônico residencial de autoria de Kaio Henrique'
-          }
+          src="/projetos/residencia.png"
+          alt="Projeto arquitetônico residencial de autoria de Kaio Henrique"
           className="absolute inset-0 w-full h-full object-cover object-center opacity-45"
           referrerPolicy="no-referrer"
         />
@@ -385,50 +316,29 @@ export function AuthGate({ initialMode }: AuthGateProps) {
         <div className="relative z-10 p-8 lg:p-12 max-w-xl space-y-6">
           <div>
             <p className="text-xs font-mono text-[#b3c4ad] mb-3">
-              {mode === 'admin'
-                ? 'GESTÃO DE CLIENTES · APROVAÇÕES · PROJETOS'
-                : 'REGULARIZAÇÃO · PROJETOS · LAUDOS · COMPLEMENTARES'}
+              REGULARIZAÇÃO · PROJETOS · LAUDOS · COMPLEMENTARES
             </p>
             <h2 className="font-display text-2xl sm:text-3xl font-medium text-[#f0f1ed] leading-snug mb-3">
-              {mode === 'admin'
-                ? 'Controle total sobre quem acessa a Área do Cliente.'
-                : 'Acesso exclusivo mediante aprovação do engenheiro responsável.'}
+              Acesso exclusivo mediante aprovação do engenheiro responsável.
             </h2>
             <p className="text-sm text-[#c4cbc4] leading-relaxed">
-              {mode === 'admin'
-                ? 'Aprove novos pedidos de cadastro, crie contas de clientes com e-mail e senha sem sair do painel, vincule projetos e publique pranchas e ARTs.'
-                : 'Se ainda não possui usuário e senha, clique em "Entrar com Google ou solicitar aprovação" para enviar seu pedido diretamente ao Eng. Kaio Henrique.'}
+              Centralizamos etapas técnicas, pranchas, laudos, protocolos de prefeitura e a comunicação direta com o Eng. Kaio Henrique em um ambiente seguro.
             </p>
           </div>
 
           <div className="pt-5 border-t border-white/10 grid sm:grid-cols-2 gap-4 text-xs text-[#cbd2cb]">
-            {mode === 'admin' ? (
-              <>
-                <div className="flex items-start gap-2.5">
-                  <Users className="w-4 h-4 text-[#b3c4ad] shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>Criação de login de clientes após sua aprovação manual.</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <KeyRound className="w-4 h-4 text-[#b3c4ad] shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>Defina ou altere sua senha de administrador a qualquer momento.</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-start gap-2.5">
-                  <FolderKanban className="w-4 h-4 text-[#b3c4ad] shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>Cronograma técnico atualizado em tempo real.</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <FileCheck2 className="w-4 h-4 text-[#b3c4ad] shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>Pranchas, laudos, protocolos e ARTs organizados por revisão.</span>
-                </div>
-                <div className="flex items-start gap-2.5 sm:col-span-2">
-                  <MessageSquare className="w-4 h-4 text-[#b3c4ad] shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>Canal direto registrado dentro de cada projeto com o Eng. Kaio Henrique.</span>
-                </div>
-              </>
-            )}
+            <div className="flex items-start gap-2.5">
+              <FolderKanban className="w-4 h-4 text-[#b3c4ad] shrink-0 mt-0.5" aria-hidden="true" />
+              <span>Cronograma técnico atualizado em tempo real.</span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <FileCheck2 className="w-4 h-4 text-[#b3c4ad] shrink-0 mt-0.5" aria-hidden="true" />
+              <span>Pranchas, laudos, protocolos e ARTs organizados por revisão.</span>
+            </div>
+            <div className="flex items-start gap-2.5 sm:col-span-2">
+              <MessageSquare className="w-4 h-4 text-[#b3c4ad] shrink-0 mt-0.5" aria-hidden="true" />
+              <span>Canal direto registrado dentro de cada projeto com o Eng. Kaio Henrique.</span>
+            </div>
           </div>
         </div>
       </div>

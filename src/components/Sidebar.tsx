@@ -50,7 +50,6 @@ export function Sidebar({
     highlightCount?: boolean;
   }> = isAdmin
     ? [
-        { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
         {
           id: 'clients',
           label: 'Clientes e Aprovações',
@@ -58,6 +57,7 @@ export function Sidebar({
           count: pendingApprovalsCount > 0 ? pendingApprovalsCount : clientsCount,
           highlightCount: pendingApprovalsCount > 0,
         },
+        { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
         {
           id: 'projects',
           label: 'Projetos',

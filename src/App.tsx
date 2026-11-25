@@ -29,7 +29,7 @@ import type {
   ServiceRequest,
   UserProfile,
 } from './types/portal';
-import { AuthGate, type LoginPortalMode } from './components/AuthGate';
+import { AuthGate } from './components/AuthGate';
 import { EmailVerificationGate } from './components/EmailVerificationGate';
 import { ClientApprovalGate } from './components/ClientApprovalGate';
 import { Sidebar, type PortalTab } from './components/Sidebar';
@@ -40,19 +40,7 @@ import { RequestsView } from './components/RequestsView';
 import { ProfileView } from './components/ProfileView';
 import { ProjectFormModal } from './components/ProjectFormModal';
 
-function detectInitialPortalMode(): LoginPortalMode {
-  if (typeof document !== 'undefined' && document.body?.dataset?.portalMode === 'admin') {
-    return 'admin';
-  }
-  if (typeof window !== 'undefined' && window.location.pathname.includes('/admin')) {
-    return 'admin';
-  }
-  return 'client';
-}
-
 export default function App() {
-  const initialMode = useMemo(() => detectInitialPortalMode(), []);
-
   const [authReady, setAuthReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [emailVerifiedTick, setEmailVerifiedTick] = useState(0);
@@ -71,9 +59,7 @@ export default function App() {
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  const [activeTab, setActiveTab] = useState<PortalTab>(
-    initialMode === 'admin' ? 'clients' : 'overview'
-  );
+  const [activeTab, setActiveTab] = useState<PortalTab>('overview');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -118,11 +104,7 @@ export default function App() {
         const resolvedAdmin = isBootstrappedAdminUser(nextUser) || hasAdminDoc;
         setProfile(loadedProfile);
         setIsAdmin(resolvedAdmin);
-        if (resolvedAdmin && initialMode === 'admin') {
-          setActiveTab('clients');
-        } else if (!resolvedAdmin) {
-          setActiveTab('overview');
-        }
+        setActiveTab(resolvedAdmin ? 'clients' : 'overview');
       } catch (err) {
         console.error('Erro ao inicializar perfil:', err);
       } finally {
@@ -131,7 +113,7 @@ export default function App() {
     });
 
     return () => unsub();
-  }, [emailVerifiedTick, initialMode]);
+  }, [emailVerifiedTick]);
 
   // Step A: For non-admin verified users, check real-time approval status in /clients & /accessRequests
   useEffect(() => {
@@ -328,9 +310,7 @@ export default function App() {
             referrerPolicy="no-referrer"
           />
           <p className="text-xs font-mono tracking-wider text-[#8f9991]">
-            {initialMode === 'admin'
-              ? 'CARREGANDO PAINEL ADMINISTRATIVO...'
-              : 'CARREGANDO ÁREA DO CLIENTE...'}
+            CARREGANDO PORTAL KH ENGENHARIA...
           </p>
         </div>
       </div>
@@ -338,7 +318,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <AuthGate initialMode={initialMode} />;
+    return <AuthGate />;
   }
 
   if (!user.emailVerified) {
