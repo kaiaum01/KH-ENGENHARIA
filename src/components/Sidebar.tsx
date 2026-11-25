@@ -5,13 +5,20 @@ import {
   FolderKanban,
   LayoutDashboard,
   LogOut,
+  Monitor,
   ShieldCheck,
   UserCircle2,
   Users,
   X,
 } from 'lucide-react';
 
-export type PortalTab = 'overview' | 'clients' | 'projects' | 'requests' | 'profile';
+export type PortalTab =
+  | 'overview'
+  | 'clients'
+  | 'projects'
+  | 'requests'
+  | 'windows_app'
+  | 'profile';
 
 interface SidebarProps {
   activeTab: PortalTab;
@@ -71,6 +78,7 @@ export function Sidebar({
           count: pendingRequestsCount > 0 ? pendingRequestsCount : undefined,
           highlightCount: pendingRequestsCount > 0,
         },
+        { id: 'windows_app', label: 'App Windows', icon: Monitor },
         { id: 'profile', label: 'Segurança e Senha', icon: ShieldCheck },
       ]
     : [

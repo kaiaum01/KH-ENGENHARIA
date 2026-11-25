@@ -39,8 +39,22 @@ import { ProjectDetailView } from './components/ProjectDetailView';
 import { RequestsView } from './components/RequestsView';
 import { ProfileView } from './components/ProfileView';
 import { ProjectFormModal } from './components/ProjectFormModal';
+import { WindowsAppView } from './components/WindowsAppView';
+import { PWAInstallButton } from './components/PWAInstallButton';
+import { OfflineIndicator } from './components/OfflineIndicator';
+
+function isAdminAppEntryPath(): boolean {
+  if (typeof document !== 'undefined' && document.body?.dataset?.portalMode === 'admin') {
+    return true;
+  }
+  if (typeof window !== 'undefined' && window.location.pathname.includes('/admin')) {
+    return true;
+  }
+  return false;
+}
 
 export default function App() {
+  const adminAppMode = useMemo(() => isAdminAppEntryPath(), []);
   const [authReady, setAuthReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [emailVerifiedTick, setEmailVerifiedTick] = useState(0);
@@ -318,7 +332,12 @@ export default function App() {
   }
 
   if (!user) {
-    return <AuthGate />;
+    return (
+      <>
+        <AuthGate adminAppMode={adminAppMode} />
+        <OfflineIndicator />
+      </>
+    );
   }
 
   if (!user.emailVerified) {
@@ -374,6 +393,7 @@ export default function App() {
     if (activeTab === 'overview') return 'Visão Geral';
     if (activeTab === 'projects') return isAdmin ? 'Projetos' : 'Meus Projetos';
     if (activeTab === 'requests') return isAdmin ? 'Solicitações' : 'Nova Solicitação';
+    if (activeTab === 'windows_app') return 'App Windows';
     return isAdmin ? 'Segurança e Senha' : 'Meus Dados e Senha';
   })();
 
@@ -425,6 +445,13 @@ export default function App() {
           <div className="flex items-center gap-2.5 shrink-0">
             {isAdmin ? (
               <>
+                <PWAInstallButton
+                  compact
+                  onOpenWindowsGuide={() => {
+                    setSelectedProjectId(null);
+                    setActiveTab('windows_app');
+                  }}
+                />
                 {activeTab !== 'clients' && (
                   <button
                     type="button"
@@ -534,6 +561,8 @@ export default function App() {
                 setShowProjectModal(true);
               }}
             />
+          ) : isAdmin && activeTab === 'windows_app' ? (
+            <WindowsAppView />
           ) : (
             <ProfileView
               user={user}
@@ -570,6 +599,8 @@ export default function App() {
           }}
         />
       )}
+
+      <OfflineIndicator />
     </div>
   );
 }

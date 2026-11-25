@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0b0c0c" />
+  <rect x="36" y="36" width="440" height="440" fill="none" stroke="#313b33" stroke-width="6" />
+  <text
+    x="256"
+    y="296"
+    text-anchor="middle"
+    font-family="Manrope, system-ui, -apple-system, sans-serif"
+    font-size="188"
+    font-weight="800"
+    letter-spacing="-6"
+    fill="#d8ddd6"
+  >
+    KH
+  </text>
+  <text
+    x="256"
+    y="370"
+    text-anchor="middle"
+    font-family="DM Sans, system-ui, -apple-system, sans-serif"
+    font-size="34"
+    font-weight="600"
+    letter-spacing="10"
+    fill="#95a491"
+  >
+    ADMIN
+  </text>
+</svg>
