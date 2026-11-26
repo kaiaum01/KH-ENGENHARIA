@@ -594,6 +594,102 @@
         "body",
         "createdAt"
       ]
+    },
+    "ContractorSettings": {
+      "title": "ContractorSettings",
+      "description": "Administrator-only professional qualification defaults for contract generation stored at /settings/contractorProfile.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "nationality": { "type": "string", "maxLength": 60 },
+        "maritalStatus": { "type": "string", "maxLength": 40 },
+        "creaUf": { "type": "string", "maxLength": 10 },
+        "creaNumber": { "type": "string", "maxLength": 40 },
+        "cpf": { "type": "string", "maxLength": 25 },
+        "rg": { "type": "string", "maxLength": 30 },
+        "email": { "type": "string", "maxLength": 254 },
+        "professionalAddress": { "type": "string", "maxLength": 240 },
+        "city": { "type": "string", "maxLength": 100 },
+        "state": { "type": "string", "maxLength": 10 },
+        "officeHoursStart": { "type": "string", "maxLength": 20 },
+        "officeHoursEnd": { "type": "string", "maxLength": 20 },
+        "defaultHourlyRate": { "type": "string", "maxLength": 40 },
+        "defaultHourlyRateWords": { "type": "string", "maxLength": 160 },
+        "defaultOutOfHoursFee": { "type": "string", "maxLength": 40 },
+        "defaultForumCity": { "type": "string", "maxLength": 100 },
+        "defaultForumState": { "type": "string", "maxLength": 10 },
+        "updatedBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "fullName",
+        "nationality",
+        "maritalStatus",
+        "creaUf",
+        "creaNumber",
+        "cpf",
+        "rg",
+        "email",
+        "professionalAddress",
+        "city",
+        "state",
+        "officeHoursStart",
+        "officeHoursEnd",
+        "defaultHourlyRate",
+        "defaultHourlyRateWords",
+        "defaultOutOfHoursFee",
+        "defaultForumCity",
+        "defaultForumState",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    "ServiceContract": {
+      "title": "ServiceContract",
+      "description": "Engineering service contract supporting PF/PJ client qualification and admin commercial clauses across all 5 KH Engenharia contract models.",
+      "type": "object",
+      "properties": {
+        "contractCode": { "type": "string", "minLength": 3, "maxLength": 32, "pattern": "^[A-Z0-9\\-]+$" },
+        "serviceType": {
+          "type": "string",
+          "enum": ["regularizacao", "arquitetonico", "laudo_vistoria", "complementares", "acompanhamento"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["aguardando_cliente", "aguardando_admin", "pronto", "assinado"]
+        },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "clientEmail": { "type": "string", "format": "email", "minLength": 5, "maxLength": 254 },
+        "clientUid": { "type": "string", "maxLength": 128 },
+        "clientName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "clientFilled": { "type": "boolean" },
+        "adminFilled": { "type": "boolean" },
+        "clientData": { "type": "object", "description": "PF or PJ qualification and property data filled by the client or admin." },
+        "contractorData": { "type": "object", "description": "Engineer qualification snapshot for this contract." },
+        "termsData": { "type": "object", "description": "Fees, installments, deadlines, witnesses, and forum clauses filled by admin." },
+        "specificData": { "type": "object", "description": "Service-specific scope checkboxes and clause fields for the selected contract model." },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "contractCode",
+        "serviceType",
+        "status",
+        "projectId",
+        "clientEmail",
+        "clientUid",
+        "clientName",
+        "clientFilled",
+        "adminFilled",
+        "clientData",
+        "contractorData",
+        "termsData",
+        "specificData",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -632,6 +728,14 @@
     "/projects/{projectId}/messages/{messageId}": {
       "schema": { "$ref": "#/entities/ProjectMessage" },
       "description": "Direct project updates and communication log between engineer and client."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/ContractorSettings" },
+      "description": "Admin-only KH Engenharia contractor profile defaults for contracts."
+    },
+    "/contracts/{contractId}": {
+      "schema": { "$ref": "#/entities/ServiceContract" },
+      "description": "Engineering service contracts filled collaboratively by client (PF/PJ) and admin, exportable to Word."
     }
   }
 }

@@ -16,6 +16,7 @@ export type PortalTab =
   | 'overview'
   | 'clients'
   | 'projects'
+  | 'contracts'
   | 'requests'
   | 'windows_app'
   | 'profile';

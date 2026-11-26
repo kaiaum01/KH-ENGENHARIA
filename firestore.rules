@@ -275,6 +275,88 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function isValidContractStatus(val) {
+      return val is string && val in ['aguardando_cliente', 'aguardando_admin', 'pronto', 'assinado'];
+    }
+
+    function isContractClientData(data) {
+      return isVerifiedUser() && (
+        (data.clientUid is string && data.clientUid.size() > 0 && data.clientUid == request.auth.uid)
+        || (data.clientEmail is string && data.clientEmail == request.auth.token.email)
+      );
+    }
+
+    function isValidContractorSettings(data) {
+      return data.keys().hasAll([
+          'fullName', 'nationality', 'maritalStatus', 'creaUf', 'creaNumber',
+          'cpf', 'rg', 'email', 'professionalAddress', 'city', 'state',
+          'officeHoursStart', 'officeHoursEnd', 'defaultHourlyRate',
+          'defaultHourlyRateWords', 'defaultOutOfHoursFee',
+          'defaultForumCity', 'defaultForumState', 'updatedBy', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'fullName', 'nationality', 'maritalStatus', 'creaUf', 'creaNumber',
+          'cpf', 'rg', 'email', 'professionalAddress', 'city', 'state',
+          'officeHoursStart', 'officeHoursEnd', 'defaultHourlyRate',
+          'defaultHourlyRateWords', 'defaultOutOfHoursFee',
+          'defaultForumCity', 'defaultForumState', 'updatedBy', 'updatedAt'
+        ])
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120
+        && data.nationality is string && data.nationality.size() <= 60
+        && data.maritalStatus is string && data.maritalStatus.size() <= 40
+        && data.creaUf is string && data.creaUf.size() <= 10
+        && data.creaNumber is string && data.creaNumber.size() <= 40
+        && data.cpf is string && data.cpf.size() <= 25
+        && data.rg is string && data.rg.size() <= 30
+        && data.email is string && data.email.size() <= 254
+        && data.professionalAddress is string && data.professionalAddress.size() <= 240
+        && data.city is string && data.city.size() <= 100
+        && data.state is string && data.state.size() <= 10
+        && data.officeHoursStart is string && data.officeHoursStart.size() <= 20
+        && data.officeHoursEnd is string && data.officeHoursEnd.size() <= 20
+        && data.defaultHourlyRate is string && data.defaultHourlyRate.size() <= 40
+        && data.defaultHourlyRateWords is string && data.defaultHourlyRateWords.size() <= 160
+        && data.defaultOutOfHoursFee is string && data.defaultOutOfHoursFee.size() <= 40
+        && data.defaultForumCity is string && data.defaultForumCity.size() <= 100
+        && data.defaultForumState is string && data.defaultForumState.size() <= 10
+        && isValidId(data.updatedBy)
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidContract(data) {
+      return data.keys().hasAll([
+          'contractCode', 'serviceType', 'status', 'projectId',
+          'clientEmail', 'clientUid', 'clientName',
+          'clientFilled', 'adminFilled',
+          'clientData', 'contractorData', 'termsData', 'specificData',
+          'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'contractCode', 'serviceType', 'status', 'projectId',
+          'clientEmail', 'clientUid', 'clientName',
+          'clientFilled', 'adminFilled',
+          'clientData', 'contractorData', 'termsData', 'specificData',
+          'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.contractCode is string && data.contractCode.size() >= 3 && data.contractCode.size() <= 32 && data.contractCode.matches('^[A-Z0-9\\-]+$')
+        && isValidServiceType(data.serviceType)
+        && isValidContractStatus(data.status)
+        && data.projectId is string && data.projectId.size() <= 128 && (data.projectId == '' || isValidId(data.projectId))
+        && isValidEmail(data.clientEmail)
+        && data.clientUid is string && data.clientUid.size() <= 128 && (data.clientUid == '' || isValidId(data.clientUid))
+        && data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 120
+        && data.clientFilled is bool
+        && data.adminFilled is bool
+        && data.clientData is map && data.clientData.size() <= 45
+        && data.clientData.personType is string && data.clientData.personType in ['PF', 'PJ']
+        && data.contractorData is map && data.contractorData.size() <= 25
+        && data.termsData is map && data.termsData.size() <= 45
+        && data.specificData is map && data.specificData.size() <= 120
+        && isValidId(data.createdBy)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     // =========================================================================
     // COLLECTION: /admins/{userId}
     // =========================================================================
@@ -676,6 +758,83 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if isSignedIn() && isValidId(projectId) && isValidId(messageId) && isAdmin();
       }
+    }
+
+    // =========================================================================
+    // COLLECTION: /settings/{settingId} (Admin-Only Contractor Defaults)
+    // =========================================================================
+
+    match /settings/{settingId} {
+      allow get: if isSignedIn() && isValidId(settingId) && isAdmin();
+      allow list: if false;
+
+      allow create: if isSignedIn()
+        && isValidId(settingId)
+        && isAdmin()
+        && isValidContractorSettings(incoming())
+        && incoming().updatedBy == request.auth.uid
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(settingId)
+        && isAdmin()
+        && isValidContractorSettings(incoming())
+        && incoming().updatedBy == request.auth.uid
+        && incoming().updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // COLLECTION: /contracts/{contractId} (Collaborative Engineering Contracts)
+    // =========================================================================
+
+    match /contracts/{contractId} {
+      allow get: if isSignedIn() && isValidId(contractId) && (
+        isContractClientData(existing()) || isAdmin()
+      );
+
+      allow list: if isSignedIn() && (
+        isContractClientData(existing()) || isBootstrappedAdmin()
+      );
+
+      allow create: if isSignedIn()
+        && isValidId(contractId)
+        && isValidContract(incoming())
+        && isAdmin()
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(contractId)
+        && isValidContract(incoming())
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Admin edits any contract fields, status, or qualification
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'contractCode', 'serviceType', 'status', 'projectId',
+            'clientEmail', 'clientUid', 'clientName',
+            'clientFilled', 'adminFilled',
+            'clientData', 'contractorData', 'termsData', 'specificData',
+            'updatedAt'
+          ]))
+          // Action: Assigned client fills PF/PJ qualification & property details while unsigned
+          || (
+            isContractClientData(existing())
+            && existing().status != 'assinado'
+            && incoming().status in ['aguardando_admin', 'pronto']
+            && incoming().clientFilled == true
+            && (incoming().clientUid == existing().clientUid || incoming().clientUid == request.auth.uid)
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'clientUid', 'clientName', 'clientData', 'clientFilled', 'status', 'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(contractId) && isAdmin();
     }
   }
 }

@@ -18,6 +18,8 @@ interface PortalHeaderProps {
   clientsCount: number;
   pendingApprovalsCount: number;
   projectsCount: number;
+  contractsCount: number;
+  pendingContractsCount: number;
   pendingRequestsCount: number;
   onPrimaryAction: () => void;
   onOpenWindowsGuide: () => void;
@@ -52,6 +54,15 @@ export function KhSiteHeader(props: KhSiteHeaderProps) {
               count: props.projectsCount,
             },
             {
+              id: 'contracts',
+              label: 'Contratos',
+              count:
+                props.pendingContractsCount > 0
+                  ? props.pendingContractsCount
+                  : props.contractsCount,
+              highlightCount: props.pendingContractsCount > 0,
+            },
+            {
               id: 'requests',
               label: 'Solicitações',
               count: props.pendingRequestsCount > 0 ? props.pendingRequestsCount : undefined,
@@ -65,6 +76,17 @@ export function KhSiteHeader(props: KhSiteHeaderProps) {
               id: 'overview',
               label: 'Meus Projetos',
               count: props.projectsCount,
+            },
+            {
+              id: 'contracts',
+              label: 'Contratos',
+              count:
+                props.pendingContractsCount > 0
+                  ? props.pendingContractsCount
+                  : props.contractsCount > 0
+                    ? props.contractsCount
+                    : undefined,
+              highlightCount: props.pendingContractsCount > 0,
             },
             { id: 'requests', label: 'Solicitações' },
             { id: 'profile', label: 'Meus Dados' },

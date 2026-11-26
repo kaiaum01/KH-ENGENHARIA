@@ -43,6 +43,13 @@ import { ProjectFormModal } from './components/ProjectFormModal';
 import { WindowsAppView } from './components/WindowsAppView';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { ContractsView } from './components/ContractsView';
+import { getContractorSettings } from './lib/contractService';
+import {
+  createDefaultContractorSettings,
+  type ContractorSettings,
+  type ServiceContract,
+} from './types/contracts';
 
 function isAdminAppEntryPath(): boolean {
   if (typeof document !== 'undefined' && document.body?.dataset?.portalMode === 'admin') {
@@ -72,6 +79,10 @@ export default function App() {
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
+  const [contracts, setContracts] = useState<ServiceContract[]>([]);
+  const [contractorSettings, setContractorSettings] = useState<ContractorSettings>(
+    createDefaultContractorSettings()
+  );
   const [dataLoading, setDataLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState<PortalTab>('overview');
@@ -97,6 +108,8 @@ export default function App() {
         setAccessRequests([]);
         setProjects([]);
         setRequests([]);
+        setContracts([]);
+        setContractorSettings(createDefaultContractorSettings());
         setSelectedProjectId(null);
         setAuthReady(true);
         setDataLoading(false);
@@ -198,13 +211,24 @@ export default function App() {
       ? query(collection(db, 'serviceRequests'))
       : query(collection(db, 'serviceRequests'), where('clientUid', '==', user.uid));
 
+    const contractsQuery: Query<DocumentData> = isAdmin
+      ? query(collection(db, 'contracts'))
+      : query(collection(db, 'contracts'), where('clientEmail', '==', emailLower));
+
     let receivedProjects = false;
     let receivedRequests = false;
+    let receivedContracts = false;
     let receivedClients = !isAdmin;
     let receivedAccessRequests = !isAdmin;
 
     const maybeStopLoading = () => {
-      if (receivedProjects && receivedRequests && receivedClients && receivedAccessRequests) {
+      if (
+        receivedProjects &&
+        receivedRequests &&
+        receivedContracts &&
+        receivedClients &&
+        receivedAccessRequests
+      ) {
         setDataLoading(false);
       }
     };
@@ -243,10 +267,31 @@ export default function App() {
       (err) => handleFirestoreError(err, OperationType.LIST, 'serviceRequests')
     );
 
+    const unsubContracts = onSnapshot(
+      contractsQuery,
+      (snap) => {
+        const items = snap.docs
+          .map((d) => ({ id: d.id, ...(d.data() as Omit<ServiceContract, 'id'>) }))
+          .sort((a, b) => {
+            const ta = a.updatedAt?.toMillis?.() ?? a.createdAt?.toMillis?.() ?? 0;
+            const tb = b.updatedAt?.toMillis?.() ?? b.createdAt?.toMillis?.() ?? 0;
+            return tb - ta;
+          });
+        setContracts(items);
+        receivedContracts = true;
+        maybeStopLoading();
+      },
+      (err) => handleFirestoreError(err, OperationType.LIST, 'contracts')
+    );
+
     let unsubAdminClients = () => {};
     let unsubAdminAccessReqs = () => {};
 
     if (isAdmin) {
+      getContractorSettings()
+        .then((loaded) => setContractorSettings(loaded))
+        .catch(() => {});
+
       unsubAdminClients = onSnapshot(
         query(collection(db, 'clients')),
         (snap) => {
@@ -277,6 +322,7 @@ export default function App() {
     return () => {
       unsubProjects();
       unsubRequests();
+      unsubContracts();
       unsubAdminClients();
       unsubAdminAccessReqs();
     };
@@ -296,6 +342,14 @@ export default function App() {
     () => accessRequests.filter((r) => r.status === 'pendente').length,
     [accessRequests]
   );
+
+  const pendingContractsCount = useMemo(() => {
+    if (isAdmin) {
+      return contracts.filter((c) => c.status === 'aguardando_admin' || c.status === 'pronto')
+        .length;
+    }
+    return contracts.filter((c) => !c.clientFilled && c.status !== 'assinado').length;
+  }, [contracts, isAdmin]);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -393,6 +447,7 @@ export default function App() {
     if (activeTab === 'overview' || activeTab === 'projects') {
       return isAdmin ? 'Projetos' : 'Meus Projetos';
     }
+    if (activeTab === 'contracts') return isAdmin ? 'Contratos e Word' : 'Meus Contratos';
     if (activeTab === 'requests') return isAdmin ? 'Solicitações' : 'Nova Solicitação';
     if (activeTab === 'windows_app') return 'App Windows';
     return isAdmin ? 'Segurança e Senha' : 'Meus Dados e Senha';
@@ -423,6 +478,8 @@ export default function App() {
         clientsCount={clients.length}
         pendingApprovalsCount={pendingApprovalsCount}
         projectsCount={projects.length}
+        contractsCount={contracts.length}
+        pendingContractsCount={pendingContractsCount}
         pendingRequestsCount={pendingRequestsCount}
         onPrimaryAction={handlePrimaryHeaderAction}
         onOpenWindowsGuide={() => {
@@ -522,6 +579,17 @@ export default function App() {
               onNewRequest={() => setActiveTab('requests')}
               onSeedDemoProject={handleSeedDemo}
               seedingDemo={seedingDemo}
+            />
+          ) : activeTab === 'contracts' ? (
+            <ContractsView
+              isAdmin={isAdmin}
+              user={user}
+              contracts={contracts}
+              clients={clients}
+              projects={projects}
+              contractorSettings={contractorSettings}
+              onContractorSettingsSaved={(next) => setContractorSettings(next)}
+              loading={dataLoading}
             />
           ) : activeTab === 'requests' ? (
             <RequestsView
