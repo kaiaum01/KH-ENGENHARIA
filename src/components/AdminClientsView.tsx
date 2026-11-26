@@ -268,17 +268,15 @@ export function AdminClientsView({
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#242a25]">
+    <div className="space-y-9">
+      {/* Header matching /index.html editorial rhythm */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-7 border-b border-[#303333]">
         <div>
-          <p className="text-xs font-mono tracking-wider text-[#95a491] mb-2">
-            ADMINISTRAÇÃO · CONTROLE DE ACESSOS
-          </p>
-          <h1 className="font-display text-2xl sm:text-3xl font-medium text-[#f0f1ed]">
-            Clientes e aprovações
+          <div className="kh-eyebrow">Administração · Controle de acessos</div>
+          <h1 className="font-display text-3xl sm:text-[42px] font-medium tracking-[-1.5px] leading-[1.12] text-[#f0f1ed] mt-4">
+            Clientes e <em className="not-italic text-[#c0d0b8]">aprovações.</em>
           </h1>
-          <p className="text-sm text-[#9aa49c] mt-1.5">
+          <p className="text-sm sm:text-[15px] text-[#aab5ac] mt-2 max-w-2xl leading-relaxed">
             Aprove pedidos de cadastro, crie contas de acesso com e-mail e senha para seus clientes e gerencie permissões.
           </p>
         </div>
@@ -286,7 +284,7 @@ export function AdminClientsView({
         <button
           type="button"
           onClick={() => openNewClientModal()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#d8ddd6] text-[#141815] text-xs font-semibold hover:bg-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-[#d8ddd6] text-[#141815] text-xs font-bold hover:bg-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
         >
           <UserPlus className="w-4 h-4" aria-hidden="true" />
           Criar usuário de cliente
@@ -294,7 +292,7 @@ export function AdminClientsView({
       </div>
 
       {/* 4-Column KPI Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 border border-[#242a25] bg-[#121513] divide-y lg:divide-y-0 lg:divide-x divide-[#242a25]">
+      <div className="grid grid-cols-2 lg:grid-cols-4 border border-[#303a32] bg-[#121613] divide-y lg:divide-y-0 lg:divide-x divide-[#303a32]">
         <div className="p-5">
           <div className="text-xs text-[#8f9991] mb-2">Clientes ativos</div>
           <div className="font-mono text-2xl sm:text-3xl font-medium tabular-nums text-[#f0f1ed]">

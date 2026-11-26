@@ -158,17 +158,15 @@ export function WindowsAppView() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-9 max-w-4xl">
       {/* Header */}
-      <div className="pb-6 border-b border-[#242a25] flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="pb-7 border-b border-[#303333] flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-mono tracking-wider text-[#95a491] mb-2">
-            WINDOWS 10 / 11 · ACESSO DIRETO DO ADMINISTRADOR
-          </p>
-          <h1 className="font-display text-2xl sm:text-3xl font-medium text-[#f0f1ed]">
-            Aplicativo KH Admin para Windows
+          <div className="kh-eyebrow">Windows 10 / 11 · Acesso direto</div>
+          <h1 className="font-display text-3xl sm:text-[42px] font-medium tracking-[-1.5px] leading-[1.12] text-[#f0f1ed] mt-4">
+            Aplicativo KH Admin <em className="not-italic text-[#c0d0b8]">para Windows.</em>
           </h1>
-          <p className="text-sm text-[#9aa49c] mt-1.5 max-w-2xl">
+          <p className="text-sm sm:text-[15px] text-[#aab5ac] mt-2 max-w-2xl leading-relaxed">
             Abra o seu painel administrativo em uma janela dedicada no Windows (sem barra de endereço ou abas), já carregando direto na sua tela de login com seu e-mail preenchido.
           </p>
         </div>
@@ -182,7 +180,7 @@ export function WindowsAppView() {
       </div>
 
       {/* Method 1: Native Windows PWA Install (Edge / Chrome) */}
-      <section className="border border-[#242a25] bg-[#121513] p-6 sm:p-8 space-y-5">
+      <section className="border border-[#303a32] bg-[#121613] p-6 sm:p-8 space-y-5">
         <div className="flex items-start justify-between gap-4 pb-4 border-b border-[#202621]">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-mono text-[#b3c4ad]">

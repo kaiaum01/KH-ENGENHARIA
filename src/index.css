@@ -9,16 +9,17 @@
 
 :root {
   --kh-bg: #0b0c0c;
-  --kh-surface: #121513;
-  --kh-surface-elevated: #171b18;
-  --kh-border: #262c27;
-  --kh-border-strong: #374038;
+  --kh-surface: #121613;
+  --kh-surface-elevated: #151b17;
+  --kh-line: #303333;
+  --kh-border: #303a32;
+  --kh-border-strong: #465246;
   --kh-text: #f0f1ed;
-  --kh-text-secondary: #aeb6af;
-  --kh-text-muted: #7f8981;
+  --kh-text-secondary: #aab5ac;
+  --kh-text-muted: #8f9991;
   --kh-accent: #d8ddd6;
   --kh-accent-ink: #141815;
-  --kh-sage: #b3c4ad;
+  --kh-sage: #c0d0b8;
 }
 
 html {
@@ -44,12 +45,59 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::selection {
-  background: #d8ddd6;
+  background: #d5d7d5;
   color: #111412;
 }
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* Exact shared container width & rhythm from the main KH Engenharia site (/index.html) */
+.kh-wrap {
+  width: min(1200px, 88%);
+  margin-inline: auto;
+}
+
+.kh-eyebrow {
+  font-size: 11px;
+  letter-spacing: 2.3px;
+  text-transform: uppercase;
+  display: inline-flex;
+  gap: 13px;
+  align-items: center;
+  color: #bdc4be;
+}
+
+.kh-eyebrow::before {
+  content: '';
+  width: 25px;
+  height: 1px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.kh-hero-backdrop {
+  position: relative;
+  isolation: isolate;
+}
+
+.kh-hero-backdrop::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(8, 11, 9, 0.95) 0%,
+      rgba(8, 11, 9, 0.84) 46%,
+      rgba(8, 11, 9, 0.62) 100%
+    ),
+    url('/projetos/engenharia-banner.png');
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
 }
 
 .kh-metallic-wordmark {
@@ -93,6 +141,19 @@ textarea:focus-visible {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #3a433c;
+}
+
+@media (max-width: 760px) {
+  .kh-hero-backdrop::before {
+    background-position: 65% center;
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(8, 11, 9, 0.93) 0%,
+        rgba(8, 11, 9, 0.78) 100%
+      ),
+      url('/projetos/engenharia-banner.png');
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -8,7 +8,7 @@ import {
   type DocumentData,
   type Query,
 } from 'firebase/firestore';
-import { Menu, Plus, UserPlus } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import {
   auth,
   db,
@@ -32,7 +32,8 @@ import type {
 import { AuthGate } from './components/AuthGate';
 import { EmailVerificationGate } from './components/EmailVerificationGate';
 import { ClientApprovalGate } from './components/ClientApprovalGate';
-import { Sidebar, type PortalTab } from './components/Sidebar';
+import type { PortalTab } from './components/Sidebar';
+import { KhSiteFooter, KhSiteHeader } from './components/KhSiteHeader';
 import { OverviewView } from './components/OverviewView';
 import { AdminClientsView } from './components/AdminClientsView';
 import { ProjectDetailView } from './components/ProjectDetailView';
@@ -75,7 +76,6 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<PortalTab>('overview');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Admin modals
   const [showProjectModal, setShowProjectModal] = useState(false);
@@ -390,113 +390,89 @@ export default function App() {
       return `Projetos / ${selectedProject.code}`;
     }
     if (activeTab === 'clients') return 'Clientes e Aprovações';
-    if (activeTab === 'overview') return 'Visão Geral';
-    if (activeTab === 'projects') return isAdmin ? 'Projetos' : 'Meus Projetos';
+    if (activeTab === 'overview' || activeTab === 'projects') {
+      return isAdmin ? 'Projetos' : 'Meus Projetos';
+    }
     if (activeTab === 'requests') return isAdmin ? 'Solicitações' : 'Nova Solicitação';
     if (activeTab === 'windows_app') return 'App Windows';
     return isAdmin ? 'Segurança e Senha' : 'Meus Dados e Senha';
   })();
 
+  const handlePrimaryHeaderAction = () => {
+    if (isAdmin) {
+      setEditingProject(null);
+      setConvertingRequest(null);
+      setProjectForClient(null);
+      setShowProjectModal(true);
+    } else {
+      setSelectedProjectId(null);
+      setActiveTab('requests');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#0b0c0c] text-[#f0f1ed] flex">
-      <Sidebar
+    <div className="min-h-screen bg-[#0b0c0c] text-[#f0f1ed] flex flex-col">
+      <KhSiteHeader
+        variant="portal"
+        isAdmin={isAdmin}
         activeTab={activeTab}
         onSelectTab={(tab) => {
           setActiveTab(tab);
           setSelectedProjectId(null);
         }}
-        isAdmin={isAdmin}
-        userName={displayUserName}
-        userEmail={displayUserEmail}
         clientsCount={clients.length}
         pendingApprovalsCount={pendingApprovalsCount}
         projectsCount={projects.length}
         pendingRequestsCount={pendingRequestsCount}
-        onSignOut={handleSignOut}
-        mobileOpen={mobileMenuOpen}
-        onCloseMobile={() => setMobileMenuOpen(false)}
+        onPrimaryAction={handlePrimaryHeaderAction}
+        onOpenWindowsGuide={() => {
+          setSelectedProjectId(null);
+          setActiveTab('windows_app');
+        }}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        {/* Top Bar (Breadcrumbs + 1–2 Primary Actions) */}
-        <header className="h-16 px-5 sm:px-8 border-b border-[#242a25] bg-[#0b0c0c]/95 sticky top-0 z-30 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+      {/* Quiet Account & Context Bar aligned to exact .kh-wrap width */}
+      <div className="border-b border-[#232924] bg-[#0e110f]">
+        <div className="kh-wrap py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-[#8f9991] min-w-0">
+            <span className="font-mono text-[11px] tracking-[1px] uppercase text-[#a8baa4] shrink-0">
+              {isAdmin ? 'Painel do Administrador' : 'Área do Cliente'}
+            </span>
+            <span className="text-[#4c554e]" aria-hidden="true">
+              /
+            </span>
+            <span className="text-[#e3e7e1] font-medium truncate">{breadcrumbLabel}</span>
+          </div>
+
+          <div className="flex items-center gap-4 shrink-0">
+            {isAdmin && (
+              <PWAInstallButton
+                compact
+                onOpenWindowsGuide={() => {
+                  setSelectedProjectId(null);
+                  setActiveTab('windows_app');
+                }}
+              />
+            )}
+            <span className="hidden sm:inline text-[#8f9991]">
+              {displayUserName}
+              {displayUserEmail ? ` · ${displayUserEmail}` : ''}
+            </span>
             <button
               type="button"
-              onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 -ml-2 text-[#aeb6af] hover:text-white cursor-pointer"
-              aria-label="Abrir menu de navegação"
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-1.5 text-[#aeb5ac] hover:text-[#f09d78] transition-colors cursor-pointer"
             >
-              <Menu className="w-5 h-5" />
+              <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+              Sair
             </button>
-
-            <div className="flex items-center gap-2 text-xs text-[#8f9991] truncate">
-              <span className="hidden sm:inline text-[#737d75]">
-                {isAdmin ? 'Painel Admin' : 'Área do Cliente'}
-              </span>
-              <span className="hidden sm:inline text-[#4c554e]" aria-hidden="true">
-                /
-              </span>
-              <span className="text-[#e3e7e1] font-medium truncate">{breadcrumbLabel}</span>
-            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
-            {isAdmin ? (
-              <>
-                <PWAInstallButton
-                  compact
-                  onOpenWindowsGuide={() => {
-                    setSelectedProjectId(null);
-                    setActiveTab('windows_app');
-                  }}
-                />
-                {activeTab !== 'clients' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedProjectId(null);
-                      setActiveTab('clients');
-                    }}
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 border border-[#374038] text-xs font-medium text-[#d8ddd6] hover:border-[#788a76] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" aria-hidden="true" />
-                    Gerenciar clientes
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingProject(null);
-                    setConvertingRequest(null);
-                    setProjectForClient(null);
-                    setShowProjectModal(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#d8ddd6] text-[#141815] text-xs font-semibold hover:bg-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                  Novo projeto
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedProjectId(null);
-                  setActiveTab('requests');
-                }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-[#374038] text-xs font-medium text-[#d8ddd6] hover:border-[#788a76] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                Solicitar serviço
-              </button>
-            )}
-          </div>
-        </header>
-
-        {/* Main Viewport */}
-        <main className="flex-1 w-full max-w-[1200px] mx-auto px-5 sm:px-8 py-8">
+      {/* Main Content aligned to exact min(1200px, 88%) width of the homepage */}
+      <main className="flex-1 py-10 sm:py-12">
+        <div className="kh-wrap">
           {selectedProject ? (
             <ProjectDetailView
               project={selectedProject}
@@ -571,8 +547,10 @@ export default function App() {
               onProfileUpdated={(updated) => setProfile(updated)}
             />
           )}
-        </main>
-      </div>
+        </div>
+      </main>
+
+      <KhSiteFooter />
 
       {/* Create / Edit Project Modal (Admin) */}
       {isAdmin && showProjectModal && (

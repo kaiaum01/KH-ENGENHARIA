@@ -108,15 +108,23 @@ export function ProfileView({
   };
 
   return (
-    <div className="space-y-8 max-w-3xl">
-      <div className="pb-6 border-b border-[#242a25]">
-        <p className="text-xs font-mono tracking-wider text-[#95a491] mb-2">
-          CONTA PRIVADA · {isAdmin ? 'ADMINISTRADOR · ENGENHEIRO RESPONSÁVEL' : 'CLIENTE'}
-        </p>
-        <h1 className="font-display text-2xl sm:text-3xl font-medium text-[#f0f1ed]">
-          {isAdmin ? 'Segurança e senha do administrador' : 'Meus dados e senha'}
+    <div className="space-y-9 max-w-3xl">
+      <div className="pb-7 border-b border-[#303333]">
+        <div className="kh-eyebrow">
+          {isAdmin ? 'Conta privada · Administrador' : 'Conta privada · Cliente'}
+        </div>
+        <h1 className="font-display text-3xl sm:text-[42px] font-medium tracking-[-1.5px] leading-[1.12] text-[#f0f1ed] mt-4">
+          {isAdmin ? (
+            <>
+              Segurança e <em className="not-italic text-[#c0d0b8]">senha.</em>
+            </>
+          ) : (
+            <>
+              Meus dados e <em className="not-italic text-[#c0d0b8]">senha.</em>
+            </>
+          )}
         </h1>
-        <p className="text-sm text-[#9aa49c] mt-1.5">
+        <p className="text-sm sm:text-[15px] text-[#aab5ac] mt-2 leading-relaxed">
           {isAdmin
             ? 'Configure sua senha pessoal de administrador para entrar no painel com e-mail e senha, e mantenha seus dados atualizados.'
             : 'Atualize seus dados de contato ou defina uma nova senha de acesso à Área do Cliente.'}
@@ -126,7 +134,7 @@ export function ProfileView({
       {/* Password Management Section */}
       <form
         onSubmit={handleSavePassword}
-        className="border border-[#242a25] bg-[#121513] p-6 sm:p-8 space-y-5"
+        className="border border-[#303a32] bg-[#121613] p-6 sm:p-8 space-y-5"
       >
         <div className="flex items-start justify-between gap-4 pb-4 border-b border-[#202621]">
           <div>

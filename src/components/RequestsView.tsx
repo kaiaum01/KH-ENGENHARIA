@@ -76,15 +76,23 @@ export function RequestsView({
       : requests.filter((r) => r.status === statusFilter);
 
   return (
-    <div className="space-y-8">
-      <div className="pb-6 border-b border-[#242a25]">
-        <p className="text-xs font-mono tracking-wider text-[#95a491] mb-2">
-          {isAdmin ? 'ATENDIMENTO · NOVAS DEMANDAS' : 'ORÇAMENTO E ESCOPO'}
-        </p>
-        <h1 className="font-display text-2xl sm:text-3xl font-medium text-[#f0f1ed]">
-          {isAdmin ? 'Solicitações de clientes' : 'Solicitar novo serviço'}
+    <div className="space-y-9">
+      <div className="pb-7 border-b border-[#303333]">
+        <div className="kh-eyebrow">
+          {isAdmin ? 'Atendimento · Novas demandas' : 'Orçamento e escopo'}
+        </div>
+        <h1 className="font-display text-3xl sm:text-[42px] font-medium tracking-[-1.5px] leading-[1.12] text-[#f0f1ed] mt-4">
+          {isAdmin ? (
+            <>
+              Solicitações de <em className="not-italic text-[#c0d0b8]">clientes.</em>
+            </>
+          ) : (
+            <>
+              Solicitar novo <em className="not-italic text-[#c0d0b8]">serviço.</em>
+            </>
+          )}
         </h1>
-        <p className="text-sm text-[#9aa49c] mt-1.5">
+        <p className="text-sm sm:text-[15px] text-[#aab5ac] mt-2 max-w-2xl leading-relaxed">
           {isAdmin
             ? 'Analise os pedidos enviados pelos clientes e converta demandas aprovadas diretamente em projetos ativos.'
             : 'Descreva o que você precisa construir, regularizar ou avaliar. O Eng. Kaio Henrique analisará e retornará com escopo e próximos passos.'}
@@ -94,7 +102,7 @@ export function RequestsView({
       {!isAdmin && (
         <form
           onSubmit={handleSubmit}
-          className="border border-[#242a25] bg-[#121513] p-6 sm:p-8 space-y-5 max-w-3xl"
+          className="border border-[#303a32] bg-[#121613] p-6 sm:p-8 space-y-5 max-w-3xl"
         >
           <div className="pb-3 border-b border-[#202621]">
             <h2 className="font-display text-base font-medium text-[#f0f1ed]">

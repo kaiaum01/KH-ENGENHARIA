@@ -84,17 +84,17 @@ export function OverviewView({
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Page Intro */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#242a25]">
+    <div className="space-y-9">
+      {/* Page Intro matching /index.html editorial rhythm */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-7 border-b border-[#303333]">
         <div>
-          <p className="text-xs font-mono tracking-wider text-[#95a491] mb-2">
-            {isAdmin ? 'GESTÃO TÉCNICA · KH ENGENHARIA' : 'PORTAL DO CLIENTE · KH ENGENHARIA'}
-          </p>
-          <h1 className="font-display text-2xl sm:text-3xl font-medium text-[#f0f1ed]">
-            Olá, {firstName}.
+          <div className="kh-eyebrow">
+            {isAdmin ? 'Gestão Técnica · KH Engenharia' : 'Portal do Cliente · KH Engenharia'}
+          </div>
+          <h1 className="font-display text-3xl sm:text-[42px] font-medium tracking-[-1.5px] leading-[1.12] text-[#f0f1ed] mt-4">
+            Olá, <em className="not-italic text-[#c0d0b8]">{firstName}.</em>
           </h1>
-          <p className="text-sm text-[#9aa49c] mt-1.5">
+          <p className="text-sm sm:text-[15px] text-[#aab5ac] mt-2 max-w-2xl leading-relaxed">
             {isAdmin
               ? 'Gerencie os projetos ativos, atualize etapas técnicas, publique pranchas e responda solicitações.'
               : 'Acompanhe o andamento dos seus projetos, consulte pranchas e ARTs ou envie uma nova solicitação.'}
@@ -106,7 +106,7 @@ export function OverviewView({
             <button
               type="button"
               onClick={onNewProject}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#d8ddd6] text-[#141815] text-xs font-semibold hover:bg-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-[#d8ddd6] text-[#141815] text-xs font-bold hover:bg-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
               Novo projeto
@@ -115,7 +115,7 @@ export function OverviewView({
             <button
               type="button"
               onClick={onNewRequest}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#d8ddd6] text-[#141815] text-xs font-semibold hover:bg-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-[#d8ddd6] text-[#141815] text-xs font-bold hover:bg-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
               Nova solicitação
@@ -124,8 +124,8 @@ export function OverviewView({
         </div>
       </div>
 
-      {/* 4-Column KPI Strip (Single elevation, hairline borders, tabular numerals) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 border border-[#242a25] bg-[#121513] divide-y lg:divide-y-0 lg:divide-x divide-[#242a25]">
+      {/* 4-Column KPI Strip (Single elevation, hairline borders matching .service-detail) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 border border-[#303a32] bg-[#121613] divide-y lg:divide-y-0 lg:divide-x divide-[#303a32]">
         <div className="p-5">
           <div className="text-xs text-[#8f9991] mb-2">Projetos ativos</div>
           <div className="font-mono text-2xl sm:text-3xl font-medium tabular-nums text-[#f0f1ed]">
