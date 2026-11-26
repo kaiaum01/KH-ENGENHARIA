@@ -41,9 +41,10 @@ import { RequestsView } from './components/RequestsView';
 import { ProfileView } from './components/ProfileView';
 import { ProjectFormModal } from './components/ProjectFormModal';
 import { WindowsAppView } from './components/WindowsAppView';
-import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { ContractsView } from './components/ContractsView';
+import { AdminToolsView } from './components/AdminToolsView';
+import { loadLocalInstallments } from './lib/localAdminStore';
 import { getContractorSettings } from './lib/contractService';
 import {
   createDefaultContractorSettings,
@@ -94,6 +95,10 @@ export default function App() {
   const [convertingRequest, setConvertingRequest] = useState<ServiceRequest | null>(null);
   const [projectForClient, setProjectForClient] = useState<ClientAccount | null>(null);
   const [seedingDemo, setSeedingDemo] = useState(false);
+  const [localPendingFinanceCount, setLocalPendingFinanceCount] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0;
+    return loadLocalInstallments().filter((i) => i.status === 'pendente').length;
+  });
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (nextUser) => {
@@ -449,6 +454,7 @@ export default function App() {
     }
     if (activeTab === 'contracts') return isAdmin ? 'Contratos e Word' : 'Meus Contratos';
     if (activeTab === 'requests') return isAdmin ? 'Solicitações' : 'Nova Solicitação';
+    if (activeTab === 'tools') return 'Gestão Local & Relatórios';
     if (activeTab === 'windows_app') return 'App Windows';
     return isAdmin ? 'Segurança e Senha' : 'Meus Dados e Senha';
   })();
@@ -481,6 +487,7 @@ export default function App() {
         contractsCount={contracts.length}
         pendingContractsCount={pendingContractsCount}
         pendingRequestsCount={pendingRequestsCount}
+        localPendingFinanceCount={localPendingFinanceCount}
         onPrimaryAction={handlePrimaryHeaderAction}
         onOpenWindowsGuide={() => {
           setSelectedProjectId(null);
@@ -502,15 +509,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
-            {isAdmin && (
-              <PWAInstallButton
-                compact
-                onOpenWindowsGuide={() => {
-                  setSelectedProjectId(null);
-                  setActiveTab('windows_app');
-                }}
-              />
-            )}
             <span className="hidden sm:inline text-[#8f9991]">
               {displayUserName}
               {displayUserEmail ? ` · ${displayUserEmail}` : ''}
@@ -530,6 +528,66 @@ export default function App() {
       {/* Main Content aligned to exact min(1200px, 88%) width of the homepage */}
       <main className="flex-1 py-10 sm:py-12">
         <div className="kh-wrap">
+          {isAdmin &&
+            !selectedProject &&
+            (pendingApprovalsCount > 0 ||
+              pendingContractsCount > 0 ||
+              pendingRequestsCount > 0 ||
+              localPendingFinanceCount > 0) && (
+              <div className="mb-8 border border-[#2b342d] bg-[#101411] p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="text-[11px] font-mono uppercase tracking-[1.2px] text-[#a8baa4] shrink-0">
+                  Pendências de ação
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {pendingApprovalsCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('clients')}
+                      className="px-3 py-1.5 border border-[#4a574c] bg-[#161c17] text-xs text-[#e8c67a] hover:border-[#9baf91] transition-colors cursor-pointer"
+                    >
+                      {pendingApprovalsCount}{' '}
+                      {pendingApprovalsCount === 1 ? 'cliente aguardando aprovação' : 'clientes aguardando aprovação'} →
+                    </button>
+                  )}
+                  {pendingContractsCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('contracts')}
+                      className="px-3 py-1.5 border border-[#4a574c] bg-[#161c17] text-xs text-[#86d69d] hover:border-[#9baf91] transition-colors cursor-pointer"
+                    >
+                      {pendingContractsCount}{' '}
+                      {pendingContractsCount === 1
+                        ? 'contrato pronto / para revisar'
+                        : 'contratos prontos / para revisar'}{' '}
+                      →
+                    </button>
+                  )}
+                  {pendingRequestsCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('requests')}
+                      className="px-3 py-1.5 border border-[#4a574c] bg-[#161c17] text-xs text-[#e3e7e1] hover:border-[#9baf91] transition-colors cursor-pointer"
+                    >
+                      {pendingRequestsCount}{' '}
+                      {pendingRequestsCount === 1 ? 'nova solicitação' : 'novas solicitações'} →
+                    </button>
+                  )}
+                  {localPendingFinanceCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('tools')}
+                      className="px-3 py-1.5 border border-[#3a443c] bg-[#131814] text-xs text-[#c0d0b8] hover:border-[#9baf91] transition-colors cursor-pointer"
+                    >
+                      {localPendingFinanceCount}{' '}
+                      {localPendingFinanceCount === 1
+                        ? 'parcela pendente (local)'
+                        : 'parcelas pendentes (local)'}{' '}
+                      →
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           {selectedProject ? (
             <ProjectDetailView
               project={selectedProject}
@@ -604,6 +662,13 @@ export default function App() {
                 setProjectForClient(null);
                 setShowProjectModal(true);
               }}
+            />
+          ) : isAdmin && activeTab === 'tools' ? (
+            <AdminToolsView
+              contracts={contracts}
+              projects={projects}
+              clients={clients}
+              onLocalFinanceChange={setLocalPendingFinanceCount}
             />
           ) : isAdmin && activeTab === 'windows_app' ? (
             <WindowsAppView />

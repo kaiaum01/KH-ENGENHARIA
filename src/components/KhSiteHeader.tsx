@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { LogOut, Menu, Plus, X } from 'lucide-react';
 import type { PortalTab } from './Sidebar';
-import { PWAInstallButton } from './PWAInstallButton';
 
 interface PublicHeaderProps {
   variant: 'public';
@@ -21,6 +20,7 @@ interface PortalHeaderProps {
   contractsCount: number;
   pendingContractsCount: number;
   pendingRequestsCount: number;
+  localPendingFinanceCount?: number;
   onPrimaryAction: () => void;
   onOpenWindowsGuide: () => void;
 }
@@ -67,6 +67,14 @@ export function KhSiteHeader(props: KhSiteHeaderProps) {
               label: 'Solicitações',
               count: props.pendingRequestsCount > 0 ? props.pendingRequestsCount : undefined,
               highlightCount: props.pendingRequestsCount > 0,
+            },
+            {
+              id: 'tools',
+              label: 'Gestão Local',
+              count:
+                props.localPendingFinanceCount && props.localPendingFinanceCount > 0
+                  ? props.localPendingFinanceCount
+                  : undefined,
             },
             { id: 'windows_app', label: 'App Windows' },
             { id: 'profile', label: 'Segurança' },
@@ -151,7 +159,9 @@ export function KhSiteHeader(props: KhSiteHeaderProps) {
                   Sair
                 </button>
               ) : props.adminAppMode ? (
-                <PWAInstallButton compact />
+                <span className="inline-flex items-center gap-2 bg-[#d8ddd6] text-[#141815] px-[18px] py-[11px] font-bold tracking-[0.2px] border border-[#d8ddd6] whitespace-nowrap">
+                  Painel Admin
+                </span>
               ) : (
                 <span className="inline-flex items-center gap-2 bg-[#d8ddd6] text-[#141815] px-[18px] py-[11px] font-bold tracking-[0.2px] border border-[#d8ddd6] whitespace-nowrap">
                   Área do Cliente

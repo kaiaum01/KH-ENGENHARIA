@@ -8,6 +8,7 @@ import {
   Eye,
   FileSignature,
   FileText,
+  MessageCircle,
   Plus,
   Save,
   Settings2,
@@ -49,6 +50,7 @@ import {
 import { ContractClientFields } from './ContractClientFields';
 import { ContractSpecificFields } from './ContractSpecificFields';
 import { ContractPreviewModal } from './ContractPreviewModal';
+import { buildWhatsAppLink } from '../lib/localAdminStore';
 
 interface ContractsViewProps {
   isAdmin: boolean;
@@ -79,6 +81,34 @@ function generateNextCode(existing: ServiceContract[]): string {
   const year = new Date().getFullYear();
   const nextNum = String(existing.length + 1).padStart(3, '0');
   return `CTR-${year}-${nextNum}`;
+}
+
+function buildContractWhatsAppUrl(contract: ServiceContract, clients: ClientAccount[]): string {
+  const matchedClient = clients.find(
+    (c) =>
+      (contract.clientUid && c.uid === contract.clientUid) ||
+      c.email.toLowerCase() === contract.clientEmail.toLowerCase()
+  );
+  const portalUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/cliente/index.html`
+      : '/cliente/index.html';
+  const modelLabel = CONTRACT_MODEL_SHORT[contract.serviceType];
+
+  const lines = !contract.clientFilled
+    ? [
+        `Olá ${contract.clientName || 'cliente'}, tudo bem?`,
+        `Disponibilizei seu contrato (${contract.contractCode} — ${modelLabel}) na Área do Cliente da KH Engenharia.`,
+        `Para concluirmos o documento, acesse ${portalUrl}, entre com o e-mail ${contract.clientEmail}, abra a aba "Contratos" e preencha seus dados de Pessoa Física ou Pessoa Jurídica.`,
+        'Assim que enviar, já gero o contrato final para assinatura.',
+      ]
+    : [
+        `Olá ${contract.clientName || 'cliente'}, tudo bem?`,
+        `Recebi seus dados no contrato ${contract.contractCode} (${modelLabel}) da KH Engenharia.`,
+        'Já estou com o documento revisado e pronto para prosseguirmos com a assinatura.',
+      ];
+
+  return buildWhatsAppLink(matchedClient?.phone, lines.join('\n'));
 }
 
 export function ContractsView({
@@ -750,6 +780,18 @@ export function ContractsView({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {clientEmail.trim() && (
+              <a
+                href={buildContractWhatsAppUrl(draftSnapshot, clients)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 border border-[#465246] px-3.5 py-2.5 text-xs font-semibold text-[#c0d0b8] hover:border-[#9baf91] hover:text-white transition-colors"
+                title="Enviar link do contrato ao cliente no WhatsApp"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Avisar cliente
+              </a>
+            )}
             <button
               type="button"
               onClick={() => setPreviewContract(draftSnapshot)}
@@ -1583,6 +1625,16 @@ export function ContractsView({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <a
+                    href={buildContractWhatsAppUrl(item, clients)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 border border-[#3c473e] px-3 py-2 text-xs font-semibold text-[#c0d0b8] hover:border-[#9baf91] hover:text-white transition-colors"
+                    title="Enviar lembrete do contrato no WhatsApp"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    WhatsApp
+                  </a>
                   <button
                     type="button"
                     onClick={() => openEditContractEditor(item)}
